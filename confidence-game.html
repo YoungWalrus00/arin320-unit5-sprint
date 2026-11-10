@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Confidence Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bungee&display=swap">
+<style>
+:root{
+  --bg:#120b24; --bg2:#1e1240; --panel:#251653; --tile:#0e5f63; --tile2:#0a4a4d; --tile-used:#1a1433;
+  --ink:#fff7ec; --muted:#c9bde6; --amber:#ffb84d; --coral:#ff6b6b; --mint:#44e0b0; --line:#ffffff2a;
+  --t0:#ff8a3d; --t1:#4dc3ff;
+  --disp:"Bungee",Impact,"Arial Black",sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(ellipse at 50% -10%,#3b1f7a 0,transparent 60%),radial-gradient(ellipse at 50% 120%,#0d4a52 0,transparent 55%),var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.5;min-height:100vh}
+button{font:inherit;cursor:pointer}
+.disp{font-family:var(--disp);font-weight:400;letter-spacing:.02em}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+.btn{font-family:var(--disp);font-size:15px;color:#1b0f33;background:var(--amber);border:0;border-radius:999px;padding:12px 22px;box-shadow:0 5px 0 #a8650f;transition:transform .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #a8650f}
+.btn:focus-visible,.tile:focus-visible,input:focus-visible{outline:4px solid #fff;outline-offset:3px}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.mint{background:var(--mint);box-shadow:0 5px 0 #188a68}
+.btn.coral{background:var(--coral);box-shadow:0 5px 0 #a33232}
+.btn.small{font-size:12px;padding:8px 14px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.marquee{text-align:center;padding:18px 0 8px}
+.marquee h1{font-family:var(--disp);font-weight:400;font-size:clamp(34px,6vw,72px);line-height:1;margin:0;color:var(--amber);text-shadow:0 0 18px #ffb84d88,0 4px 0 #7a3d00}
+.marquee p{margin:8px 0 0;color:var(--muted)}
+.bulbs{display:flex;justify-content:center;gap:14px;margin:10px 0}
+.bulbs i{width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber);animation:bulb 1.2s infinite}
+.bulbs i:nth-child(2n){animation-delay:.6s}
+@keyframes bulb{50%{opacity:.25;box-shadow:none}}
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:2px solid var(--line);border-radius:18px;padding:20px 22px}
+.card+.card{margin-top:16px}
+h2{font-family:var(--disp);font-weight:400;font-size:20px;margin:0 0 12px;color:var(--amber)}
+label{display:block;font-weight:700;margin:10px 0 6px}
+input[type=text],input[type=number]{width:100%;font:inherit;font-size:20px;color:var(--ink);background:#0b0618;border:2px solid #5b4a8f;border-radius:10px;padding:10px 12px}
+.teams-setup{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{background:transparent;color:var(--ink);border:0;padding:8px 14px;font-weight:700}
+.seg button[aria-pressed="true"]{background:var(--amber);color:#1b0f33}
+.muted{color:var(--muted)}
+.small{font-size:15px}
+@media (max-width:700px){.teams-setup{grid-template-columns:1fr}}
+
+/* board */
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.cat{font-family:var(--disp);font-size:clamp(11px,1.5vw,17px);line-height:1.2;text-align:center;background:#2a1760;border-radius:12px;padding:14px 8px;min-height:72px;display:grid;place-items:center;border-bottom:4px solid var(--amber)}
+.tile{position:relative;font-family:var(--disp);font-size:clamp(22px,3.6vw,44px);color:var(--amber);background:linear-gradient(180deg,var(--tile),var(--tile2));border:0;border-radius:12px;min-height:clamp(64px,10vh,104px);box-shadow:inset 0 -6px 0 #0006,0 6px 14px #0006;text-shadow:0 3px 0 #0008;transition:transform .12s}
+.tile:hover:not(.used){transform:translateY(-3px) scale(1.02)}
+.tile.used{background:var(--tile-used);color:transparent;text-shadow:none;cursor:default;box-shadow:inset 0 0 0 2px var(--line)}
+.tile.used .won{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--body);font-weight:700;font-size:clamp(11px,1.2vw,15px);color:var(--muted)}
+.tile.used.w0 .won{color:var(--t0)}.tile.used.w1 .won{color:var(--t1)}
+.scores{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch;margin-top:16px}
+.team{border-radius:16px;padding:12px 16px;background:#0b0618;border:3px solid var(--c);display:grid;gap:6px}
+.team.t0{--c:var(--t0)}.team.t1{--c:var(--t1)}
+.team.control{box-shadow:0 0 0 4px #fff3,0 0 26px var(--c)}
+.team input{font-family:var(--disp);font-size:clamp(14px,1.8vw,22px);background:transparent;border:0;border-bottom:2px dashed #fff3;border-radius:0;padding:2px 0;color:var(--c)}
+.team .pts{font-family:var(--disp);font-size:clamp(30px,4.5vw,54px);line-height:1}
+.team .pts.neg{color:var(--coral)}
+.team .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ctl{font-size:13px;color:var(--muted)}
+.mid{display:grid;gap:8px;align-content:center;justify-items:center}
+
+/* clue overlay */
+.stage{position:fixed;inset:0;z-index:20;background:radial-gradient(ellipse at 50% 0%,#3b1f7a 0,transparent 60%),#0c0720f2;display:grid;grid-template-rows:auto 1fr auto;padding:18px max(18px,4vw)}
+.stage-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.chip{font-family:var(--disp);font-size:clamp(12px,1.4vw,18px);background:#2a1760;border-radius:999px;padding:8px 16px}
+.chip.v{color:var(--amber)}
+.clue{align-self:center;justify-self:center;max-width:1100px;text-align:center}
+.clue .q{font-size:clamp(24px,3.6vw,48px);line-height:1.3;font-weight:700;animation:rise .4s ease-out}
+.clue .a{margin-top:26px;font-family:var(--disp);font-size:clamp(22px,3.2vw,42px);color:var(--mint);line-height:1.25;animation:rise .4s ease-out}
+.clue .why{margin-top:12px;font-size:clamp(16px,1.7vw,22px);color:var(--muted)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.dc{font-family:var(--disp);font-size:clamp(40px,8vw,110px);color:var(--amber);text-shadow:0 0 30px #ffb84d,0 6px 0 #7a3d00;animation:pop .6s}
+@keyframes pop{0%{transform:scale(.2) rotate(-8deg);opacity:0}70%{transform:scale(1.1)}100%{transform:none;opacity:1}}
+.timer{height:14px;border-radius:999px;background:#ffffff1a;overflow:hidden;margin:10px auto 0;max-width:900px;width:100%}
+.timer i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--coral),var(--amber),var(--mint));transition:width .2s linear}
+.stage-bot{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center}
+.stage-bot .btn{font-size:clamp(12px,1.3vw,16px)}
+.award{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.award .t0b{background:var(--t0);box-shadow:0 5px 0 #9a4a14}
+.award .t1b{background:var(--t1);box-shadow:0 5px 0 #1f6e96}
+.award .miss{background:transparent;color:var(--ink);border:2px solid var(--coral);box-shadow:none}
+.award .miss.done{opacity:.35}
+.wagerbox{display:grid;gap:10px;justify-items:center;margin-top:18px}
+.wagerbox input{max-width:260px;text-align:center;font-family:var(--disp);font-size:30px}
+.finalgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:900px;margin:18px auto 0;text-align:left}
+.finalgrid .team input[type=number]{font-size:24px;border:2px solid #5b4a8f;border-radius:10px;padding:8px 10px;color:var(--ink);font-family:var(--disp)}
+.winner{font-family:var(--disp);font-size:clamp(30px,6vw,80px);color:var(--amber);text-shadow:0 0 24px #ffb84d;animation:pop .7s}
+.keys{font-size:14px;color:var(--muted);text-align:center;margin-top:10px}
+kbd{font-family:var(--disp);font-size:11px;border:2px solid var(--line);border-radius:6px;padding:2px 6px}
+canvas.burst{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:40}
+.topbar{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+@media (max-width:760px){.board{gap:6px}.scores{grid-template-columns:1fr 1fr}.mid{grid-column:1/-1;order:3}.finalgrid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="marquee">
+    <div class="bulbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <h1>THE CONFIDENCE GAME</h1>
+    <p>ARIN 320 · Unit 5 · A two-team quiz show on reading and deciding with AI output</p>
+  </header>
+
+  <!-- SETUP -->
+  <section id="setup">
+    <div class="card">
+      <h2>NAME YOUR TEAMS</h2>
+      <div class="teams-setup">
+        <div><label for="n0">Team 1</label><input type="text" id="n0" maxlength="28" autocomplete="off"></div>
+        <div><label for="n1">Team 2</label><input type="text" id="n1" maxlength="28" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>HOUSE RULES</h2>
+      <div class="opts"><b>Answer clock:</b><span class="seg" id="opt-timer"><button type="button" data-v="0">Off</button><button type="button" data-v="20">20 s</button><button type="button" data-v="30">30 s</button><button type="button" data-v="45">45 s</button></span></div>
+      <div class="opts" style="margin-top:10px"><b>Wrong answers lose points:</b><span class="seg" id="opt-pen"><button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></span></div>
+      <div class="opts" style="margin-top:10px"><b>Voices:</b><span class="seg" id="opt-voice"><button type="button" data-v="1">On</button><button type="button" data-v="0">Off</button></span>
+        <button type="button" class="btn ghost small" data-act="test-host">🔊 Hear the host</button><button type="button" class="btn ghost small" data-act="test-narr">🔊 Hear the narrator</button></div>
+      <p class="small muted" style="margin-top:12px">The narrator reads each question. The host reads the correct answer and calls the score. Voices come from the browser’s speech engine, and Edge has the most natural ones. Two Double Check tiles hide on the board, and the game ends with the Final Call wager round.</p>
+    </div>
+    <div class="card">
+      <h2>HOW TO RUN IT</h2>
+      <ol class="small">
+        <li>Share this screen. The team in control picks a category and a value.</li>
+        <li>The narrator reads the question. Either team can answer out loud. You judge it.</li>
+        <li>Select <b>Reveal</b>. The host reads the answer. Award the points, or mark a team wrong and let the other team try.</li>
+        <li>The team that answers right picks next. Made a mistake? <b>Undo</b> takes back the last score change.</li>
+      </ol>
+      <p class="keys">Keys: <kbd>Space</kbd> reveal · <kbd>1</kbd>/<kbd>2</kbd> team right · <kbd>Q</kbd>/<kbd>W</kbd> team wrong · <kbd>0</kbd> nobody · <kbd>R</kbd> read again</p>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+      <button type="button" class="btn" data-act="start" id="btn-start">START THE SHOW ▶</button>
+      <button type="button" class="btn ghost" data-act="resume" id="btn-resume" hidden>Resume saved game</button>
+    </div>
+  </section>
+
+  <!-- BOARD -->
+  <section id="game" hidden>
+    <div class="topbar">
+      <button type="button" class="btn ghost small" data-act="undo" id="btn-undo">↶ Undo</button>
+      <button type="button" class="btn ghost small" data-act="voice" id="btn-voice">🗣 Voices on</button>
+      <button type="button" class="btn ghost small" data-act="final" id="btn-final">Final Call ▶</button>
+      <button type="button" class="btn ghost small" data-act="newgame">New game</button>
+    </div>
+    <div class="board" id="board" style="margin-top:12px"></div>
+    <div class="scores" id="scores"></div>
+  </section>
+</div>
+
+<div class="stage" id="stage" hidden role="dialog" aria-modal="true" aria-live="polite"></div>
+
+<script>
+(function () {
+'use strict';
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('en-US');
+const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* ===== CLUES: all from the Unit 5 Guide, Parts 1 and 2. Edit freely. ===== */
+const CATS = [
+  { name: 'Read the Output', clues: [
+    { q: 'Every result a language service hands back has two parts. What are they?', a: 'A label and a score', why: 'The label is the model’s pick. The score shows how strongly it leans toward that pick.' },
+    { q: 'A confidence score runs between which two numbers?', a: '0 and 1', why: 'And it is not the chance the label is right for you. It describes the vendor’s test data.' },
+    { q: 'A dashboard scored “Yes. Thank you, that would be great” as Positive, 0.97, and counted the whole call as a happy customer. What should you always ask about a score?', a: 'What unit it covers', why: 'One sentence, one turn, or the whole conversation. This caller had a child with a new rash and a dropped callback.' },
+    { q: 'Which family of output writes new text, and can state things the source never said while still reading smoothly?', a: 'Generators (GenAI)', why: 'Summaries and drafted replies. Classifiers can only be wrong inside their list. Generators can invent.' },
+    { q: 'Sentiment, entities, and summaries are all built on top of one output. Which one do you check first?', a: 'The transcript', why: 'If the service heard the wrong drug name, every result built on it is wrong too. Check the foundation first.' }
+  ] },
+  { name: 'Sort, Spot, or Trigger', clues: [
+    { q: 'Which job starts an action with no person involved?', a: 'Trigger', why: 'Like freezing a card the moment a fraud score crosses a line. Nobody stands in between unless the design adds someone.' },
+    { q: 'Key phrases from 6,000 repair requests show which problem is growing. Which job is that?', a: 'Spot', why: 'A pattern across thousands of items. A person reads the pattern and decides what to change.' },
+    { q: 'Messages flagged negative are routed to a senior agent. Which job is that?', a: 'Sort', why: 'Each item goes to the right place, and a person still handles each one.' },
+    { q: 'Which job forgives errors best, because mistakes in both directions roughly cancel out?', a: 'Spot', why: 'An 8 percent error rate barely moves a pattern. In a sort or trigger job, it means 8 people in every 100 handled wrong.' },
+    { q: 'A university emails an academic warning to any student whose posts score negative three weeks in a row. How do you fix the design?', a: 'Turn the trigger into a sort', why: 'Send the list to an advisor, who reads the posts and decides whether to reach out.' }
+  ] },
+  { name: 'Same Word, Different World', clues: [
+    { q: 'In medicine, is a negative biopsy good news or bad news?', a: 'Good news', why: 'A general model learned “negative” from everyday text like product reviews. Ask what a label means in this setting.' },
+    { q: '“Great, another two-hour wait. Love it.” Which weakness of sentiment models does this show?', a: 'Sarcasm', why: 'The words are positive. The message is not.' },
+    { q: 'In Japan, “That would be a little difficult” is often a polite no. What does a tool trained on American English end up measuring?', a: 'Writing style', why: 'Indirect complaints score as calm, and direct ones score as angry.' },
+    { q: 'Loughran and McDonald found that words like tax, cost, and liability fooled a general list of negative words. In which field?', a: 'Finance', why: 'Almost three quarters of the “negative” counts in annual reports weren’t negative at all.' },
+    { q: '“Leadership” shows up in 40 percent of climate survey comments. Why can’t the staff brief it as the unit’s top problem?', a: 'A phrase count shows what people mentioned, not what they said', why: 'Half those comments could be praise. Read a sample before briefing anything.' }
+  ] },
+  { name: 'Reliable or Relevant?', clues: [
+    { q: 'A false alarm, where the tool flags something that didn’t deserve it, is also called a false what?', a: 'False positive', why: 'Every threshold is a choice between false positives and false negatives.' },
+    { q: 'What do you call a miss, where the tool stayed quiet about something real?', a: 'A false negative', why: 'A missing flag leaves nothing on the screen to question.' },
+    { q: 'At a clinic, a false alarm costs a nurse two minutes and a miss could cost a patient. Should the urgency threshold be loose or strict?', a: 'Loose', why: 'Set it by what each error costs. A spam filter runs the other way: set it strict.' },
+    { q: 'A tool correctly tags the refill message negative, but the clinic needs to know if it’s urgent. Reliable, relevant, both, or neither?', a: 'Reliable, but not relevant', why: 'Sentiment answers “Is this person unhappy?” The clinic needed “Is this urgent?”' },
+    { q: 'A tool that passed your 100-item test last year fails it this year because language changed. What is this called?', a: 'Drift', why: 'In 2020, “I tested positive” suddenly showed up everywhere. Put the 100-item test on a schedule.' }
+  ] },
+  { name: 'Who Looks First?', clues: [
+    { q: 'The AI recommends, and a person decides every case. In, on, or out of the loop?', a: 'Human in the loop', why: 'It fits high-stakes decisions, like the UBS analyst approving each script.' },
+    { q: 'Which design fits a spam filter: in, on, or out of the loop?', a: 'Out of the loop', why: 'Low stakes. The tool acts alone. Audit a sample now and then.' },
+    { q: 'What is the name for the tendency to trust a machine’s output even when you shouldn’t?', a: 'Automation bias', why: 'In one study, expert radiologists fell from about 82 to about 46 percent correct when the AI suggestion was wrong.' },
+    { q: 'A quality team checks only what the tool flagged and finds it right 95 percent of the time. What don’t they know?', a: 'How many problems it missed', why: 'Audit a random sample of the pile the tool cleared. It’s the only way to find the misses.' },
+    { q: 'A real review of a decision about a person needs five things. Name three.', a: 'Time, information, authority, a name, a way back', why: 'Take away any one, and the review is a formality.' }
+  ] }
+];
+const FINAL = {
+  cat: 'Case Files',
+  q: 'In 1983, Stanislav Petrov faced a missile alert at the highest confidence level. He did three things right. Name two of them.',
+  a: 'He asked if it made sense, he checked a second source, and he used his authority to say no',
+  why: 'Five missiles didn’t fit a first strike. Ground radar showed nothing. He reported a malfunction and owned the call.'
+};
+const VALUES = [100, 200, 300, 400, 500];
+
+/* ===== state ===== */
+const KEY = 'arin320-unit5-confidence-game-v1';
+function pickDC() {
+  const all = []; for (let c = 0; c < 5; c++) for (let v = 1; v < 5; v++) all.push(c + '-' + v);
+  const a = all.splice(Math.floor(Math.random() * all.length), 1)[0];
+  const rest = all.filter(k => k.split('-')[0] !== a.split('-')[0]);
+  return [a, rest[Math.floor(Math.random() * rest.length)]];
+}
+function blank() { return { started: false, teams: [{ name: 'Team 1', score: 0 }, { name: 'Team 2', score: 0 }], used: {}, dc: pickDC(), control: 0, timer: 30, pen: 1, voice: 1, hist: [], final: { phase: 'off', wager: [0, 0], res: [null, null] } }; }
+let S;
+try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch (e) { S = blank(); }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } };
+
+/* ===== sound ===== */
+let AC = null;
+function tone(f, d, type, vol, when) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const t = AC.currentTime + (when || 0), o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'triangle'; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(vol || 0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + 0.03);
+  } catch (e) { /* no audio */ }
+}
+const SFX = {
+  open: () => [392, 523, 659].forEach((f, i) => tone(f, 0.18, 'triangle', 0.07, i * 0.07)),
+  right: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, 'square', 0.05, i * 0.08)),
+  wrong: () => { tone(196, 0.35, 'sawtooth', 0.06); tone(147, 0.45, 'sawtooth', 0.05, 0.12); },
+  tick: () => tone(1200, 0.04, 'square', 0.03),
+  buzz: () => { tone(110, 0.6, 'square', 0.07); tone(116, 0.6, 'square', 0.05); },
+  dc: () => [262, 330, 392, 523, 659, 784].forEach((f, i) => tone(f, 0.14, 'square', 0.05, i * 0.06))
+};
+// an original thinking loop for the Final Call
+let thinkT = 0;
+function thinkMusic(on) {
+  clearInterval(thinkT); if (!on) return;
+  const seq = [523, 659, 587, 698, 659, 784, 698, 880]; let i = 0;
+  thinkT = setInterval(() => { tone(seq[i % seq.length], 0.22, 'triangle', 0.035); if (i % 2 === 0) tone(seq[i % seq.length] / 2, 0.3, 'sine', 0.03); i++; }, 360);
+}
+
+/* ===== voices ===== */
+const SPK = { ok: 'speechSynthesis' in window && !!window.SpeechSynthesisUtterance, map: {}, gen: 0, timer: 0 };
+const ROLE = {
+  host: { pitch: 1.0, rate: 1.0, names: ['Guy', 'Andrew', 'Christopher', 'Davis', 'Brian', 'Google US English', 'David', 'Mark', 'Alex'] },
+  narr: { pitch: 0.7, rate: 0.9, names: ['Ryan', 'Thomas', 'George', 'Google UK English Male', 'Daniel', 'Arthur', 'Mark', 'David'] }
+};
+function loadVoices() {
+  if (!SPK.ok) return;
+  const all = speechSynthesis.getVoices(), en = all.filter(v => /^en([-_]|$)/i.test(v.lang));
+  const pool = en.length ? en : all, used = new Set();
+  const score = v => (/natural|online|neural/i.test(v.name) ? 2 : 0) + (/google/i.test(v.name) ? 1 : 0);
+  Object.keys(ROLE).forEach(r => {
+    let pick = null;
+    for (const n of ROLE[r].names) { const c = pool.filter(v => v.name.includes(n) && !used.has(v.name)).sort((a, b) => score(b) - score(a)); if (c[0]) { pick = c[0]; break; } }
+    pick = pick || pool.find(v => !used.has(v.name)) || pool[0] || null;
+    if (pick) used.add(pick.name);
+    SPK.map[r] = pick;
+  });
+}
+if (SPK.ok) { loadVoices(); speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', loadVoices); }
+const clean = t => String(t).replace(/[“”]/g, '"').replace(/−/g, 'minus ').replace(/[▶↶🔊🗣]/g, ' ').replace(/\s+/g, ' ').trim();
+function speak(lines, onDone) {
+  SPK.gen++; const g = SPK.gen; clearTimeout(SPK.timer);
+  if (!SPK.ok || !S.voice) { if (onDone) onDone(); return; }
+  try { speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+  const us = []; let est = 800;
+  lines.forEach(([role, text]) => {
+    clean(text).split(/(?<=[.!?])\s+/).filter(Boolean).forEach(ch => {
+      const u = new SpeechSynthesisUtterance(ch), R = ROLE[role], v = SPK.map[role];
+      if (v) { u.voice = v; u.lang = v.lang; } u.pitch = R.pitch; u.rate = R.rate; us.push(u); est += ch.length * 80;
+    });
+  });
+  if (!us.length) { if (onDone) onDone(); return; }
+  let fired = false;
+  const fin = () => { if (fired || g !== SPK.gen) return; fired = true; clearTimeout(SPK.timer); if (onDone) onDone(); };
+  us[us.length - 1].onend = fin; us[us.length - 1].onerror = fin;
+  SPK.timer = setTimeout(fin, est + 4000);
+  setTimeout(() => { if (g === SPK.gen) us.forEach(u => speechSynthesis.speak(u)); }, 80);
+}
+function hush() { SPK.gen++; clearTimeout(SPK.timer); if (SPK.ok) try { speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
+
+/* ===== scoring ===== */
+function addPts(t, n, why) { S.teams[t].score += n; S.hist.push({ t, n, why }); save(); renderScores(); }
+function undo() {
+  const h = S.hist.pop(); if (!h) return;
+  S.teams[h.t].score -= h.n;
+  if (h.why && h.why.tile && h.n > 0 && S.used[h.why.tile]) S.used[h.why.tile] = { by: null };
+  save(); renderBoard(); renderScores();
+}
+const tn = t => S.teams[t].name || ('Team ' + (t + 1));
+
+/* ===== board ===== */
+function renderBoard() {
+  const b = $('#board'); let h = CATS.map(c => '<div class="cat">' + esc(c.name.toUpperCase()) + '</div>').join('');
+  for (let v = 0; v < 5; v++) for (let c = 0; c < 5; c++) {
+    const k = c + '-' + v, u = S.used[k];
+    h += u ? '<button type="button" class="tile used' + (u.by != null ? ' w' + u.by : '') + '" disabled aria-label="' + esc(CATS[c].name) + ' ' + VALUES[v] + ', played"><span class="won">' + (u.by != null ? esc(tn(u.by)) : '—') + '</span></button>'
+      : '<button type="button" class="tile" data-act="open" data-k="' + k + '" aria-label="' + esc(CATS[c].name) + ' for ' + VALUES[v] + '">' + VALUES[v] + '</button>';
+  }
+  b.innerHTML = h;
+  $('#btn-final').textContent = Object.keys(S.used).length >= 25 ? 'FINAL CALL ▶' : 'Final Call ▶';
+  $('#btn-final').className = 'btn small ' + (Object.keys(S.used).length >= 25 ? '' : 'ghost');
+}
+function renderScores() {
+  $('#scores').innerHTML = [0, 1].map(t => '<div class="team t' + t + (S.control === t ? ' control' : '') + '">' +
+    '<input type="text" value="' + esc(S.teams[t].name) + '" data-team="' + t + '" maxlength="28" aria-label="Team ' + (t + 1) + ' name">' +
+    '<div class="pts' + (S.teams[t].score < 0 ? ' neg' : '') + '">' + fmt(S.teams[t].score) + '</div>' +
+    '<div class="row"><span class="ctl">' + (S.control === t ? '▶ Picks next' : '') + '</span><button type="button" class="btn ghost small" data-act="control" data-t="' + t + '">Give control</button>' +
+    '<button type="button" class="btn ghost small" data-act="adj" data-t="' + t + '" data-n="100" aria-label="Add 100">+100</button><button type="button" class="btn ghost small" data-act="adj" data-t="' + t + '" data-n="-100" aria-label="Subtract 100">−100</button></div></div>').join('')
+    .replace('</div><div class="team t1', '</div><div class="mid"><span class="disp" style="font-size:22px;color:var(--muted)">VS</span><span class="small muted">' + (25 - Object.keys(S.used).length) + ' clues left</span></div><div class="team t1');
+  $('#btn-undo').disabled = !S.hist.length;
+  $('#btn-voice').textContent = S.voice ? '🗣 Voices on' : '🗣 Voices off';
+}
+
+/* ===== clue flow ===== */
+const C = { k: null, phase: '', missed: [false, false], wager: 0, dcTeam: 0, timerRaf: 0 };
+function openClue(k) {
+  const [c, v] = k.split('-').map(Number);
+  C.k = k; C.missed = [false, false];
+  hush(); SFX.open();
+  if (S.dc.includes(k)) { C.phase = 'dcwager'; C.dcTeam = S.control; SFX.dc(); speak([['host', 'It’s a Double Check! ' + tn(C.dcTeam) + ', how much will you wager?']]); }
+  else C.phase = 'ask';
+  renderStage();
+  if (C.phase === 'ask') readClue();
+}
+function clueOf(k) { const [c, v] = k.split('-').map(Number); return { cat: CATS[c], clue: CATS[c].clues[v], val: VALUES[v] }; }
+function readClue() {
+  const { cat, clue, val } = clueOf(C.k);
+  stopTimer();
+  speak([['narr', cat.name + ', for ' + (C.phase === 'ask' && S.dc.includes(C.k) ? 'a wager of ' + C.wager : val) + '. ' + clue.q]], () => { if (C.phase === 'ask') startTimer(S.timer); });
+}
+function startTimer(sec) {
+  stopTimer(); const bar = $('#tbar'); if (!sec || !bar) return;
+  const t0 = performance.now(); let lastTick = -1;
+  const tick = now => {
+    const el = $('#tbar'); if (!el) return;
+    const left = sec - (now - t0) / 1000;
+    el.style.width = Math.max(0, left / sec * 100) + '%';
+    const s = Math.ceil(left);
+    if (s <= 5 && s > 0 && s !== lastTick) { lastTick = s; SFX.tick(); }
+    if (left <= 0) { SFX.buzz(); return; }
+    C.timerRaf = requestAnimationFrame(tick);
+  };
+  C.timerRaf = requestAnimationFrame(tick);
+}
+function stopTimer() { cancelAnimationFrame(C.timerRaf); }
+function renderStage() {
+  const st = $('#stage'); st.hidden = false;
+  const { cat, clue, val } = clueOf(C.k);
+  const isDC = S.dc.includes(C.k);
+  const amount = isDC ? C.wager : val;
+  let mid = '', bot = '';
+  if (C.phase === 'dcwager') {
+    const max = Math.max(S.teams[C.dcTeam].score, 500);
+    mid = '<div class="clue"><div class="dc">DOUBLE CHECK!</div><p class="why">' + esc(tn(C.dcTeam)) + ' found a Double Check. Wager any amount from 0 to ' + fmt(max) + '. Only ' + esc(tn(C.dcTeam)) + ' answers.</p>' +
+      '<div class="wagerbox"><label for="wager">Wager for ' + esc(tn(C.dcTeam)) + '</label><input type="number" id="wager" min="0" max="' + max + '" step="100" value="' + Math.min(max, 500) + '"><p class="small muted" id="wnote"></p></div></div>';
+    bot = '<button type="button" class="btn" data-act="dcgo">LOCK THE WAGER ▶</button><button type="button" class="btn ghost small" data-act="dcswap">Wrong team? Switch</button>';
+  } else {
+    mid = '<div class="clue"><div class="q">' + esc(clue.q) + '</div>' + (C.phase === 'reveal' ? '<div class="a">' + esc(clue.a) + '</div><div class="why">' + esc(clue.why) + '</div><p class="why"><b>' + esc(C.result) + '</b></p>' : '') + '</div>';
+    if (C.phase === 'reveal') bot = '<button type="button" class="btn" data-act="back">BACK TO THE BOARD ▶</button><button type="button" class="btn ghost small" data-act="reread-a">🔊 Hear the answer again</button>';
+    else {
+      const timer = '<div style="width:100%"><div class="timer"' + (S.timer ? '' : ' hidden') + '><i id="tbar"></i></div></div>';
+      if (isDC) bot = timer + '<div class="award"><button type="button" class="btn t' + C.dcTeam + 'b" data-act="right" data-t="' + C.dcTeam + '">✓ ' + esc(tn(C.dcTeam)) + ' +' + fmt(amount) + '</button><button type="button" class="btn miss" data-act="dcwrong">✗ ' + esc(tn(C.dcTeam)) + ' −' + fmt(amount) + '</button></div>';
+      else bot = timer + '<div class="award">' + [0, 1].map(t => '<button type="button" class="btn t' + t + 'b" data-act="right" data-t="' + t + '"' + (C.missed[t] ? ' disabled' : '') + '>✓ ' + esc(tn(t)) + ' +' + fmt(val) + '</button>').join('') +
+        [0, 1].map(t => '<button type="button" class="btn miss' + (C.missed[t] ? ' done' : '') + '" data-act="wrong" data-t="' + t + '"' + (C.missed[t] ? ' disabled' : '') + '>✗ ' + esc(tn(t)) + (S.pen ? ' −' + fmt(val) : ' missed') + '</button>').join('') + '</div>';
+      bot += '<button type="button" class="btn mint small" data-act="reveal">Nobody · reveal the answer</button><button type="button" class="btn ghost small" data-act="reread">🔊 Read again</button>';
+    }
+  }
+  st.innerHTML = '<div class="stage-top"><span class="chip">' + esc(cat.name.toUpperCase()) + '</span><span class="chip v">' + (isDC ? (C.phase === 'dcwager' ? 'DOUBLE CHECK' : 'WAGER ' + fmt(amount)) : fmt(val)) + '</span></div>' + mid + '<div class="stage-bot">' + bot + '</div>';
+  const f = $('#wager') || $('.stage-bot .btn'); if (f) f.focus();
+}
+function reveal(by, result, lead) {
+  if (C.phase !== 'ask') return;
+  stopTimer(); C.phase = 'reveal'; C.by = by == null ? null : by; C.result = result || 'Nobody got this one.';
+  renderStage();
+  const { clue } = clueOf(C.k);
+  speak([['host', (lead || 'The answer: ') + clue.a + '. ' + clue.why]]);
+}
+function closeClue(by) {
+  S.used[C.k] = { by }; save(); hush(); stopTimer();
+  $('#stage').hidden = true; C.k = null; C.phase = '';
+  renderBoard(); renderScores();
+  if (Object.keys(S.used).length >= 25) setTimeout(() => speak([['host', 'That clears the board! Time for the Final Call.']]), 600);
+}
+
+/* ===== final call ===== */
+function renderFinal() {
+  const F = S.final, st = $('#stage'); st.hidden = false;
+  let mid = '', bot = '';
+  if (F.phase === 'wager') {
+    mid = '<div class="clue"><div class="dc" style="font-size:clamp(34px,6vw,80px)">THE FINAL CALL</div><p class="why">Category: <b>' + esc(FINAL.cat) + '</b>. Each team wagers from 0 up to its score. Type the wagers, then read the question.</p>' +
+      '<div class="finalgrid">' + [0, 1].map(t => '<div class="team t' + t + '"><b style="color:var(--c)">' + esc(tn(t)) + ' · ' + fmt(S.teams[t].score) + '</b><label for="fw' + t + '">Wager</label><input type="number" id="fw' + t + '" min="0" max="' + Math.max(0, S.teams[t].score) + '" step="100" value="' + (F.wager[t] || 0) + '"></div>').join('') + '</div><p class="small muted" id="fnote"></p></div>';
+    bot = '<button type="button" class="btn" data-act="fask">LOCK WAGERS · READ THE QUESTION ▶</button><button type="button" class="btn ghost small" data-act="fclose">Back to board</button>';
+  } else if (F.phase === 'ask' || F.phase === 'reveal') {
+    mid = '<div class="clue"><div class="q">' + esc(FINAL.q) + '</div>' + (F.phase === 'reveal' ? '<div class="a">' + esc(FINAL.a) + '</div><div class="why">' + esc(FINAL.why) + '</div>' : '') + '</div>';
+    if (F.phase === 'ask') bot = '<div style="width:100%"><div class="timer"><i id="tbar"></i></div></div><button type="button" class="btn mint" data-act="freveal">REVEAL THE ANSWER</button><button type="button" class="btn ghost small" data-act="fread">🔊 Read again</button>';
+    else bot = '<div class="award">' + [0, 1].map(t => F.res[t] == null
+      ? '<button type="button" class="btn t' + t + 'b" data-act="fres" data-t="' + t + '" data-ok="1">✓ ' + esc(tn(t)) + ' +' + fmt(F.wager[t]) + '</button><button type="button" class="btn miss" data-act="fres" data-t="' + t + '" data-ok="0">✗ ' + esc(tn(t)) + ' −' + fmt(F.wager[t]) + '</button>'
+      : '<span class="chip">' + esc(tn(t)) + (F.res[t] ? ' ✓' : ' ✗') + '</span>').join('') + '</div>';
+  } else if (F.phase === 'done') {
+    const [a, b] = [S.teams[0].score, S.teams[1].score];
+    const win = a === b ? null : (a > b ? 0 : 1);
+    mid = '<div class="clue"><div class="winner">' + (win == null ? 'IT’S A TIE!' : esc(tn(win).toUpperCase()) + ' WINS!') + '</div><div class="finalgrid">' + [0, 1].map(t => '<div class="team t' + t + '"><b style="color:var(--c)">' + esc(tn(t)) + '</b><div class="pts">' + fmt(S.teams[t].score) + '</div></div>').join('') + '</div>' +
+      '<p class="why" style="margin-top:20px">A score tells you what the tool saw. A person decides what it means.</p></div>';
+    bot = '<button type="button" class="btn ghost" data-act="fclose">Back to board</button><button type="button" class="btn" data-act="newgame">New game</button>';
+  }
+  st.innerHTML = '<div class="stage-top"><span class="chip">FINAL CALL · ' + esc(FINAL.cat.toUpperCase()) + '</span></div>' + mid + '<div class="stage-bot">' + bot + '</div>';
+}
+function finalStartTimer() {
+  thinkMusic(true);
+  const sec = 30, t0 = performance.now();
+  const tick = now => { const el = $('#tbar'); if (!el || S.final.phase !== 'ask') { thinkMusic(false); return; } const left = sec - (now - t0) / 1000; el.style.width = Math.max(0, left / sec * 100) + '%'; if (left <= 0) { thinkMusic(false); SFX.buzz(); return; } C.timerRaf = requestAnimationFrame(tick); };
+  C.timerRaf = requestAnimationFrame(tick);
+}
+
+/* ===== confetti ===== */
+function burst() {
+  if (reduceMotion) return;
+  const c = document.createElement('canvas'); c.className = 'burst';
+  const W = innerWidth, H = innerHeight; c.width = W; c.height = H; document.body.appendChild(c);
+  const x = c.getContext('2d'), cols = ['#ffb84d', '#44e0b0', '#ff6b6b', '#4dc3ff', '#ff8a3d'];
+  const P = Array.from({ length: 140 }, () => ({ x: W / 2, y: H * 0.35, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 13 - 3, r: Math.random() * 7 + 4, c: cols[Math.random() * 5 | 0] }));
+  const t0 = performance.now();
+  (function f(now) { const k = (now - t0) / 2000; x.clearRect(0, 0, W, H); P.forEach(p => { p.vy += 0.3; p.x += p.vx; p.y += p.vy; x.globalAlpha = Math.max(0, 1 - k); x.fillStyle = p.c; x.fillRect(p.x, p.y, p.r, p.r * 0.6); }); if (k < 1) requestAnimationFrame(f); else c.remove(); })(t0);
+}
+
+/* ===== setup ===== */
+function syncSetup() {
+  $('#n0').value = S.teams[0].name; $('#n1').value = S.teams[1].name;
+  const seg = (id, val) => $$('#' + id + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val))));
+  seg('opt-timer', S.timer); seg('opt-pen', S.pen); seg('opt-voice', S.voice);
+  $('#btn-resume').hidden = !S.started;
+  $('#btn-start').textContent = S.started ? 'START A NEW GAME ▶' : 'START THE SHOW ▶';
+}
+function showGame() { $('#setup').hidden = true; $('#game').hidden = false; renderBoard(); renderScores(); }
+
+/* ===== events ===== */
+document.addEventListener('click', e => {
+  const segb = e.target.closest('.seg button');
+  if (segb) {
+    const id = segb.parentNode.id, v = +segb.dataset.v;
+    if (id === 'opt-timer') S.timer = v; if (id === 'opt-pen') S.pen = v; if (id === 'opt-voice') { S.voice = v; if (!v) hush(); }
+    save(); syncSetup(); return;
+  }
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const act = b.dataset.act, t = b.dataset.t != null ? +b.dataset.t : null;
+  switch (act) {
+    case 'test-host': speak([['host', 'Welcome to The Confidence Game! I read the correct answers.']]); break;
+    case 'test-narr': speak([['narr', 'And I read the questions. Choose carefully.']]); break;
+    case 'start': {
+      const keep = { timer: S.timer, pen: S.pen, voice: S.voice };
+      const names = [$('#n0').value.trim() || 'Team 1', $('#n1').value.trim() || 'Team 2'];
+      S = Object.assign(blank(), keep); S.teams[0].name = names[0]; S.teams[1].name = names[1]; S.started = true; S.control = Math.random() < 0.5 ? 0 : 1; save();
+      showGame(); SFX.dc();
+      speak([['host', 'Welcome to The Confidence Game! Tonight, ' + tn(0) + ' takes on ' + tn(1) + '. A coin toss says ' + tn(S.control) + ' picks first.']]);
+      break;
+    }
+    case 'resume': showGame(); break;
+    case 'newgame': if (confirm('Start a new game? This clears both scores and the board.')) { hush(); thinkMusic(false); $('#stage').hidden = true; const keep = { timer: S.timer, pen: S.pen, voice: S.voice, teams: S.teams.map(x => ({ name: x.name, score: 0 })) }; S = Object.assign(blank(), keep); save(); $('#game').hidden = true; $('#setup').hidden = false; syncSetup(); } break;
+    case 'open': openClue(b.dataset.k); break;
+    case 'reveal': if (C.phase === 'ask') { SFX.wrong(); reveal(null, 'Nobody got this one.', 'Nobody? The answer: '); } break;
+    case 'reread': readClue(); break;
+    case 'reread-a': { const { clue } = clueOf(C.k); speak([['host', 'The answer: ' + clue.a + '. ' + clue.why]]); break; }
+    case 'back': {
+      const by = C.by; closeClue(by);
+      speak([['host', by != null ? tn(by) + ', you pick next.' : tn(S.control) + ', you still have control.']]);
+      break;
+    }
+    case 'right': {
+      if (C.phase !== 'ask') return;
+      const amount = S.dc.includes(C.k) ? C.wager : clueOf(C.k).val;
+      addPts(t, amount, { tile: C.k }); S.control = t; save(); SFX.right(); burst();
+      reveal(t, tn(t) + ' takes ' + fmt(amount) + '!', 'Correct! ' + tn(t) + ' takes ' + amount + '. The answer: ');
+      break;
+    }
+    case 'wrong': {
+      if (C.missed[t] || C.phase !== 'ask') return;
+      C.missed[t] = true; SFX.wrong();
+      if (S.pen) addPts(t, -clueOf(C.k).val, { tile: null });
+      const other = 1 - t;
+      if (C.missed[0] && C.missed[1]) { reveal(null, 'Both teams missed.', (S.pen ? tn(t) + ' loses ' + clueOf(C.k).val + '. ' : '') + 'Nobody got it. The answer: '); break; }
+      speak([['host', (S.pen ? 'Ooh. ' + tn(t) + ' loses ' + clueOf(C.k).val + '. ' : 'Not quite, ' + tn(t) + '. ') + tn(other) + ', can you steal it?']]);
+      renderStage();
+      break;
+    }
+    case 'dcswap': C.dcTeam = 1 - C.dcTeam; renderStage(); break;
+    case 'dcgo': {
+      const max = Math.max(S.teams[C.dcTeam].score, 500), w = Math.round(+$('#wager').value);
+      if (!(w >= 0 && w <= max)) { $('#wnote').textContent = 'Pick a wager from 0 to ' + fmt(max) + '.'; return; }
+      C.wager = w; C.phase = 'ask'; renderStage(); readClue(); break;
+    }
+    case 'dcwrong': { if (C.phase !== 'ask') return; addPts(C.dcTeam, -C.wager, { tile: null }); SFX.wrong(); reveal(null, tn(C.dcTeam) + ' loses ' + fmt(C.wager) + '.', 'Ooh, not this time. ' + tn(C.dcTeam) + ' loses ' + C.wager + '. The answer: '); break; }
+    case 'control': S.control = t; save(); renderScores(); break;
+    case 'adj': addPts(t, +b.dataset.n, null); break;
+    case 'undo': undo(); break;
+    case 'voice': S.voice = S.voice ? 0 : 1; if (!S.voice) hush(); save(); renderScores(); break;
+    case 'final': {
+      if (Object.keys(S.used).length < 25 && !confirm('Some clues are still on the board. Go to the Final Call anyway?')) return;
+      if (S.final.phase === 'off') S.final.phase = 'wager';
+      save(); renderFinal(); SFX.dc();
+      if (S.final.phase === 'wager') speak([['host', 'It’s time for the Final Call. The category is: ' + FINAL.cat + '. Teams, make your wagers.']]);
+      break;
+    }
+    case 'fask': {
+      const w = [0, 1].map(i => Math.round(+$('#fw' + i).value)), bad = [0, 1].find(i => !(w[i] >= 0 && w[i] <= Math.max(0, S.teams[i].score)));
+      if (bad != null) { $('#fnote').textContent = tn(bad) + ' can wager from 0 to ' + fmt(Math.max(0, S.teams[bad].score)) + '.'; return; }
+      S.final.wager = w; S.final.phase = 'ask'; save(); renderFinal();
+      speak([['narr', FINAL.cat + '. ' + FINAL.q + ' You have thirty seconds.']], () => { if (S.final.phase === 'ask') finalStartTimer(); });
+      break;
+    }
+    case 'fread': cancelAnimationFrame(C.timerRaf); thinkMusic(false); speak([['narr', FINAL.q]], () => { if (S.final.phase === 'ask') finalStartTimer(); }); break;
+    case 'freveal': cancelAnimationFrame(C.timerRaf); thinkMusic(false); S.final.phase = 'reveal'; save(); renderFinal(); speak([['host', 'The answer: ' + FINAL.a + '. ' + FINAL.why]]); break;
+    case 'fres': {
+      const ok = b.dataset.ok === '1'; S.final.res[t] = ok;
+      addPts(t, ok ? S.final.wager[t] : -S.final.wager[t], null); (ok ? SFX.right : SFX.wrong)();
+      if (S.final.res.every(r => r != null)) {
+        S.final.phase = 'done'; save(); renderFinal(); burst(); setTimeout(burst, 500);
+        const [a, c] = [S.teams[0].score, S.teams[1].score];
+        speak([['host', a === c ? 'It’s a tie at ' + a + '! What a game.' : tn(a > c ? 0 : 1) + ' wins The Confidence Game with ' + Math.max(a, c) + ' points! Great game, everyone.']]);
+      } else { save(); renderFinal(); }
+      break;
+    }
+    case 'fclose': hush(); thinkMusic(false); cancelAnimationFrame(C.timerRaf); if (S.final.phase === 'ask') S.final.phase = 'wager'; save(); $('#stage').hidden = true; renderBoard(); renderScores(); break;
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.team != null) { S.teams[+t.dataset.team].name = t.value; save(); renderBoard(); }
+  if (t.id === 'n0' || t.id === 'n1') { S.teams[+t.id[1]].name = t.value; save(); }
+});
+document.addEventListener('keydown', e => {
+  if ($('#stage').hidden || /input|textarea/i.test(e.target.tagName)) return;
+  if (S.final.phase !== 'off' && !C.k) return;
+  const k = e.key.toLowerCase();
+  const click = sel => { const el = $(sel); if (el && !el.disabled) { e.preventDefault(); el.click(); } };
+  if (k === ' ') { if (C.phase === 'reveal') click('[data-act="back"]'); else click('[data-act="reveal"]'); }
+  else if (k === 'r') click(C.phase === 'reveal' ? '[data-act="reread-a"]' : '[data-act="reread"]');
+  else if (k === '1') click('[data-act="right"][data-t="0"]');
+  else if (k === '2') click('[data-act="right"][data-t="1"]');
+  else if (k === 'q') click('[data-act="wrong"][data-t="0"]');
+  else if (k === 'w') click('[data-act="wrong"][data-t="1"]');
+  else if (k === '0') click('[data-act="reveal"]');
+});
+
+syncSetup();
+})();
+</script>
+</body>
+</html>
